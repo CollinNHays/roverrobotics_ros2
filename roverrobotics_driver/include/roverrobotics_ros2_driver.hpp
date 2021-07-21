@@ -13,6 +13,7 @@
 
 #include "eigen3/Eigen/Dense"
 #include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/joy.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -77,6 +78,8 @@ class RobotDriver : public rclcpp::Node {
       estop_reset_subscriber_;  // listen to estop reset inputs
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr
       robot_info__request_subscriber_;  // listen to robot_info request
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
+      buttons_subscriber_;  // listen to cmd_vel inputs
 
   rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr
       robot_info_publisher;  // publish robot_unique info
@@ -123,6 +126,7 @@ class RobotDriver : public rclcpp::Node {
    *
    * @param msg Twist Msg containing linear x y z and angular x y z
    */
+  void buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr msg);
   void velocity_event_callback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   /**
    * @brief Trim Topic Event Callback

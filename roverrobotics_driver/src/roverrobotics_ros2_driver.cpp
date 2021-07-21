@@ -1,9 +1,11 @@
 #include "roverrobotics_ros2_driver.hpp"
+#include "JetsonGPIO.h"
 using namespace RoverRobotics;
 
 RobotDriver::RobotDriver()
     : Node("roverrobotics",
-           rclcpp::NodeOptions().use_intra_process_comms(false)) {
+           rclcpp::NodeOptions().use_intra_process_comms(false))
+{
   RCLCPP_INFO(get_logger(), "Starting Rover Driver node");
   // Robot
   robot_status_topic_ =
@@ -67,27 +69,34 @@ RobotDriver::RobotDriver()
   // Init Sub
   speed_command_subscriber_ = create_subscription<geometry_msgs::msg::Twist>(
       speed_topic_, rclcpp::QoS(1),
-      [=](geometry_msgs::msg::Twist::ConstSharedPtr msg) {
+      [=](geometry_msgs::msg::Twist::ConstSharedPtr msg)
+      {
         velocity_event_callback(msg);
       });
+  buttons_subscriber_ = create_subscription<sensor_msgs::msg::Joy>("/joy", rclcpp::QoS(1), [=](sensor_msgs::msg::Joy::ConstSharedPtr msg)
+                                                                   { buttons_event_callback(msg); });
   trim_event_subscriber_ = create_subscription<std_msgs::msg::Float32>(
       trim_topic_, rclcpp::QoS(3),
-      [=](std_msgs::msg::Float32::ConstSharedPtr msg) {
+      [=](std_msgs::msg::Float32::ConstSharedPtr msg)
+      {
         trim_event_callback(msg);
       });
   estop_trigger_subscriber_ = create_subscription<std_msgs::msg::Bool>(
       estop_trigger_topic_, rclcpp::QoS(2),
-      [=](std_msgs::msg::Bool::ConstSharedPtr msg) {
+      [=](std_msgs::msg::Bool::ConstSharedPtr msg)
+      {
         estop_trigger_event_callback(msg);
       });
   estop_reset_subscriber_ = create_subscription<std_msgs::msg::Bool>(
       estop_reset_topic_, rclcpp::QoS(2),
-      [=](std_msgs::msg::Bool::ConstSharedPtr msg) {
+      [=](std_msgs::msg::Bool::ConstSharedPtr msg)
+      {
         estop_reset_event_callback(msg);
       });
   robot_info__request_subscriber_ = create_subscription<std_msgs::msg::Bool>(
       estop_reset_topic_, rclcpp::QoS(2),
-      [=](std_msgs::msg::Bool::ConstSharedPtr msg) {
+      [=](std_msgs::msg::Bool::ConstSharedPtr msg)
+      {
         robot_info_request_callback(msg);
       });
 
@@ -97,32 +106,40 @@ RobotDriver::RobotDriver()
       robot_info_topic_, rclcpp::QoS(32));
   robot_status_publisher_ = create_publisher<std_msgs::msg::Float32MultiArray>(
       robot_status_topic_, rclcpp::QoS(31));
-  if (pub_odom_tf_) {
+  if (pub_odom_tf_)
+  {
     RCLCPP_INFO(get_logger(),
                 "Publishing Robot TF on " + odom_topic_ + " at %.2Fhz",
                 odometry_frequency_);
     odometry_publisher_ =
         create_publisher<nav_msgs::msg::Odometry>(odom_topic_, rclcpp::QoS(4));
     odometry_timer_ =
-        create_wall_timer(1s / odometry_frequency_, [=]() { update_odom(); });
+        create_wall_timer(1s / odometry_frequency_, [=]()
+                          { update_odom(); });
   }
   robot_status_timer_ = create_wall_timer(1s / robot_status_frequency_,
-                                          [=]() { publish_robot_status(); });
+                                          [=]()
+                                          { publish_robot_status(); });
   RCLCPP_INFO(
       get_logger(),
       "Publishing Robot status on " + robot_status_topic_ + " at %.2Fhz",
       robot_status_frequency_);
 
   // Init Pid
-  if (control_mode_name_ == "TRACTION_CONTROL") {
+  if (control_mode_name_ == "TRACTION_CONTROL")
+  {
     control_mode_ = Control::TRACTION_CONTROL;
     RCLCPP_WARN(get_logger(),
                 "Control Mode is in TRACTION CONTROL; Drive with CAUTION");
-  } else if (control_mode_name_ == "INDEPENDENT_WHEEL") {
+  }
+  else if (control_mode_name_ == "INDEPENDENT_WHEEL")
+  {
     control_mode_ = Control::INDEPENDENT_WHEEL;
     RCLCPP_WARN(get_logger(),
                 "Control Mode is in INDEPENDENT WHEEL; Drive with CAUTION");
-  } else {
+  }
+  else
+  {
     control_mode_ = Control::OPEN_LOOP;
     RCLCPP_INFO(
         get_logger(),
@@ -134,86 +151,127 @@ RobotDriver::RobotDriver()
   // initialize connection to robot
   RCLCPP_INFO(get_logger(),
               "Attempting to connect to robot at " + device_port_);
-  if (robot_type_ == "pro") {
-    try {
+  if (robot_type_ == "pro")
+  {
+    try
+    {
       robot_ = std::make_unique<ProProtocolObject>(
           device_port_.c_str(), comm_type_, control_mode_, pid_gains_);
-    } catch (int i) {
+    }
+    catch (int i)
+    {
       RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1) {
+      if (i == -1)
+      {
         RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
                                        " is not available. Stopping This Node");
-      } else if (i == -2) {
+      }
+      else if (i == -2)
+      {
         RCLCPP_FATAL(get_logger(),
                      "This Communication Method is not supported");
-      } else {
+      }
+      else
+      {
         RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
       }
       rclcpp::shutdown();
       return;
     }
     RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  } else if (robot_type_ == "zero2") {
-    try {
+  }
+  else if (robot_type_ == "zero2")
+  {
+    try
+    {
       robot_ = std::make_unique<Zero2ProtocolObject>(
           device_port_.c_str(), comm_type_, control_mode_, pid_gains_,
           angular_scaling_params_);
-    } catch (int i) {
+    }
+    catch (int i)
+    {
       RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1) {
+      if (i == -1)
+      {
         RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
                                        " is not available. Stopping This Node");
-      } else if (i == -2) {
+      }
+      else if (i == -2)
+      {
         RCLCPP_FATAL(get_logger(),
                      "This Communication Method is not supported");
-      } else {
+      }
+      else
+      {
         RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
       }
       rclcpp::shutdown();
       return;
     }
     RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  } else if (robot_type_ == "pro2") {
-    try {
+  }
+  else if (robot_type_ == "pro2")
+  {
+    try
+    {
       robot_ = std::make_unique<Pro2ProtocolObject>(
           device_port_.c_str(), comm_type_, control_mode_, pid_gains_,
           angular_scaling_params_);
-    } catch (int i) {
+    }
+    catch (int i)
+    {
       RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1) {
+      if (i == -1)
+      {
         RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
                                        " is not available. Stopping This Node");
-      } else if (i == -2) {
+      }
+      else if (i == -2)
+      {
         RCLCPP_FATAL(get_logger(),
                      "This Communication Method is not supported");
-      } else {
+      }
+      else
+      {
         RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
       }
       rclcpp::shutdown();
       return;
     }
     RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  } else if (robot_type_ == "mini") {
-    try {
+  }
+  else if (robot_type_ == "mini")
+  {
+    try
+    {
       robot_ = std::make_unique<MiniProtocolObject>(
           device_port_.c_str(), comm_type_, control_mode_, pid_gains_,
           angular_scaling_params_);
-    } catch (int i) {
+    }
+    catch (int i)
+    {
       RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1) {
+      if (i == -1)
+      {
         RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
                                        " is not available. Stopping This Node");
-      } else if (i == -2) {
+      }
+      else if (i == -2)
+      {
         RCLCPP_FATAL(get_logger(),
                      "This Communication Method is not supported");
-      } else {
+      }
+      else
+      {
         RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
       }
       rclcpp::shutdown();
       return;
     }
     RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  } else {
+  }
+  else
+  {
     RCLCPP_WARN(get_logger(),
                 "Robot Type is currently not suppported. Stopping this Node");
     rclcpp::shutdown();
@@ -221,11 +279,15 @@ RobotDriver::RobotDriver()
   RCLCPP_INFO(get_logger(),
               "Use 'ros2 param dump /roverrobotics_driver --print' to print "
               "see all parameters running on this node");
+  GPIO::setmode(GPIO::BOARD);
+  GPIO::setup(12, GPIO::OUT, GPIO::HIGH);
 }
 
-void RobotDriver::publish_robot_info() {
+void RobotDriver::publish_robot_info()
+{
   // RCLCPP_INFO(get_logger(), "Updating Robot Info");
-  if (!robot_->is_connected()) {
+  if (!robot_->is_connected())
+  {
     RCLCPP_FATAL(
         get_logger(),
         "Didn't receive data from the Robot. SHUTTING DOWN THE DRIVER NODE");
@@ -243,9 +305,11 @@ void RobotDriver::publish_robot_info() {
   robot_info_publisher->publish(robot_info);
 }
 
-void RobotDriver::publish_robot_status() {
+void RobotDriver::publish_robot_status()
+{
   // std::cerr << robot_->is_connected() << std::endl;
-  if (!robot_->is_connected()) {
+  if (!robot_->is_connected())
+  {
     RCLCPP_FATAL(
         get_logger(),
         "Didn't receive data from the Robot. Stopping this Driver Node");
@@ -295,8 +359,10 @@ void RobotDriver::publish_robot_status() {
   robot_status_publisher_->publish(robot_status);
 }
 
-void RobotDriver::update_odom() {
-  if (!robot_->is_connected()) {
+void RobotDriver::update_odom()
+{
+  if (!robot_->is_connected())
+  {
     RCLCPP_FATAL(
         get_logger(),
         "Didn't receive data from the Robot. Stopping this Driver Node");
@@ -312,10 +378,23 @@ void RobotDriver::update_odom() {
   odom.twist.twist.angular.z = robot_data_.angular_vel;
   odometry_publisher_->publish(odom);
 }
-
+void RobotDriver::buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr msg)
+{
+  static double buttonstate = msg->buttons[7];
+  if (buttonstate == 1)
+  {
+    GPIO::output(12, GPIO::HIGH);
+  }
+  else if (buttonstate != 1)
+  {
+    GPIO::output(12, GPIO::LOW);
+  }
+}
 void RobotDriver::velocity_event_callback(
-    geometry_msgs::msg::Twist::ConstSharedPtr msg) {
-  if (!robot_->is_connected()) {
+    geometry_msgs::msg::Twist::ConstSharedPtr msg)
+{
+  if (!robot_->is_connected())
+  {
     RCLCPP_FATAL(
         get_logger(),
         "Didn't receive data from the Robot. Stopping this Driver Node");
@@ -330,14 +409,17 @@ void RobotDriver::velocity_event_callback(
 }
 
 void RobotDriver::trim_event_callback(
-    std_msgs::msg::Float32::ConstSharedPtr &msg) {
+    std_msgs::msg::Float32::ConstSharedPtr &msg)
+{
   RCLCPP_INFO(get_logger(), "Trim Event triggered");
   robot_->update_drivetrim(msg->data);
 }
 
 void RobotDriver::estop_trigger_event_callback(
-    std_msgs::msg::Bool::ConstSharedPtr &msg) {
-  if (msg->data == true) {
+    std_msgs::msg::Bool::ConstSharedPtr &msg)
+{
+  if (msg->data == true)
+  {
     RCLCPP_INFO(get_logger(), "Software Estop activated");
     estop_state_ = true;
     robot_->send_estop(estop_state_);
@@ -345,8 +427,10 @@ void RobotDriver::estop_trigger_event_callback(
 }
 
 void RobotDriver::estop_reset_event_callback(
-    std_msgs::msg::Bool::ConstSharedPtr &msg) {
-  if (msg->data == true) {
+    std_msgs::msg::Bool::ConstSharedPtr &msg)
+{
+  if (msg->data == true)
+  {
     RCLCPP_INFO(get_logger(), "Software Estop deactivated");
     estop_state_ = false;
     robot_->send_estop(estop_state_);
@@ -354,13 +438,16 @@ void RobotDriver::estop_reset_event_callback(
 }
 
 void RobotDriver::robot_info_request_callback(
-    std_msgs::msg::Bool::ConstSharedPtr &msg) {
-  if (msg->data == true) {
+    std_msgs::msg::Bool::ConstSharedPtr &msg)
+{
+  if (msg->data == true)
+  {
     publish_robot_info();
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   rclcpp::init(argc, argv);
 
   rclcpp::executors::MultiThreadedExecutor executor;
