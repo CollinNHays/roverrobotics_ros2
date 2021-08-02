@@ -6,10 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <librover/protocol_mini.hpp>
-#include <librover/protocol_pro.hpp>
-#include <librover/protocol_pro_2.hpp>
-#include <librover/protocol_zero_2.hpp>
+#include <librover/mini_demo.hpp>
 
 #include "eigen3/Eigen/Dense"
 #include "geometry_msgs/msg/twist.hpp"
