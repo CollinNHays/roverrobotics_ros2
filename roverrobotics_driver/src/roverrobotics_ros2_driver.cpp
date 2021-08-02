@@ -1,5 +1,5 @@
 #include "roverrobotics_ros2_driver.hpp"
-#include "JetsonGPIO.h"
+// #include "JetsonGPIO.h"
 using namespace RoverRobotics;
 
 RobotDriver::RobotDriver()
@@ -279,8 +279,8 @@ RobotDriver::RobotDriver()
   RCLCPP_INFO(get_logger(),
               "Use 'ros2 param dump /roverrobotics_driver --print' to print "
               "see all parameters running on this node");
-  GPIO::setmode(GPIO::BOARD);
-  GPIO::setup(12, GPIO::OUT, GPIO::HIGH);
+  // GPIO::setmode(GPIO::BOARD);
+  // GPIO::setup(12, GPIO::OUT, GPIO::HIGH);
 }
 
 void RobotDriver::publish_robot_info()
@@ -380,15 +380,15 @@ void RobotDriver::update_odom()
 }
 void RobotDriver::buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr msg)
 {
-  static double buttonstate = msg->buttons[7];
-  if (buttonstate == 1)
-  {
-    GPIO::output(12, GPIO::HIGH);
-  }
-  else if (buttonstate != 1)
-  {
-    GPIO::output(12, GPIO::LOW);
-  }
+  // static double buttonstate = msg->buttons[7];
+  // if (buttonstate == 1)
+  // {
+  //   GPIO::output(12, GPIO::HIGH);
+  // }
+  // else if (buttonstate != 1)
+  // {
+  //   GPIO::output(12, GPIO::LOW);
+  // }
 }
 void RobotDriver::velocity_event_callback(
     geometry_msgs::msg::Twist::ConstSharedPtr msg)
