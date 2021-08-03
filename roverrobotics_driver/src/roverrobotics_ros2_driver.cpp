@@ -73,8 +73,8 @@ RobotDriver::RobotDriver()
       {
         velocity_event_callback(msg);
       });
-  buttons_subscriber_ = create_subscription<sensor_msgs::msg::Joy>("/joy", rclcpp::QoS(1), [=](sensor_msgs::msg::Joy::ConstSharedPtr msg)
-                                                                   { buttons_event_callback(msg); });
+  //buttons_subscriber_ = create_subscription<sensor_msgs::msg::Joy>("/joy", rclcpp::QoS(1), [=](sensor_msgs::msg::Joy::ConstSharedPtr msg)
+  //                                                                 { buttons_event_callback(msg); });
   trim_event_subscriber_ = create_subscription<std_msgs::msg::Float32>(
       trim_topic_, rclcpp::QoS(3),
       [=](std_msgs::msg::Float32::ConstSharedPtr msg)
@@ -151,96 +151,7 @@ RobotDriver::RobotDriver()
   // initialize connection to robot
   RCLCPP_INFO(get_logger(),
               "Attempting to connect to robot at " + device_port_);
-  if (robot_type_ == "pro")
-  {
-    try
-    {
-      robot_ = std::make_unique<ProProtocolObject>(
-          device_port_.c_str(), comm_type_, control_mode_, pid_gains_);
-    }
-    catch (int i)
-    {
-      RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1)
-      {
-        RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
-                                       " is not available. Stopping This Node");
-      }
-      else if (i == -2)
-      {
-        RCLCPP_FATAL(get_logger(),
-                     "This Communication Method is not supported");
-      }
-      else
-      {
-        RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
-      }
-      rclcpp::shutdown();
-      return;
-    }
-    RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  }
-  else if (robot_type_ == "zero2")
-  {
-    try
-    {
-      robot_ = std::make_unique<Zero2ProtocolObject>(
-          device_port_.c_str(), comm_type_, control_mode_, pid_gains_,
-          angular_scaling_params_);
-    }
-    catch (int i)
-    {
-      RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1)
-      {
-        RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
-                                       " is not available. Stopping This Node");
-      }
-      else if (i == -2)
-      {
-        RCLCPP_FATAL(get_logger(),
-                     "This Communication Method is not supported");
-      }
-      else
-      {
-        RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
-      }
-      rclcpp::shutdown();
-      return;
-    }
-    RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  }
-  else if (robot_type_ == "pro2")
-  {
-    try
-    {
-      robot_ = std::make_unique<Pro2ProtocolObject>(
-          device_port_.c_str(), comm_type_, control_mode_, pid_gains_,
-          angular_scaling_params_);
-    }
-    catch (int i)
-    {
-      RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
-      if (i == -1)
-      {
-        RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
-                                       " is not available. Stopping This Node");
-      }
-      else if (i == -2)
-      {
-        RCLCPP_FATAL(get_logger(),
-                     "This Communication Method is not supported");
-      }
-      else
-      {
-        RCLCPP_FATAL(get_logger(), "Unknown Error. Stopping This Node");
-      }
-      rclcpp::shutdown();
-      return;
-    }
-    RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
-  }
-  else if (robot_type_ == "mini")
+  if (robot_type_ == "zero2")
   {
     try
     {
@@ -270,7 +181,7 @@ RobotDriver::RobotDriver()
     }
     RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
   }
-  else
+ else
   {
     RCLCPP_WARN(get_logger(),
                 "Robot Type is currently not suppported. Stopping this Node");
@@ -378,8 +289,8 @@ void RobotDriver::update_odom()
   odom.twist.twist.angular.z = robot_data_.angular_vel;
   odometry_publisher_->publish(odom);
 }
-void RobotDriver::buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr msg)
-{
+//void RobotDriver::buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr msg)
+//{
   // static double buttonstate = msg->buttons[7];
   // if (buttonstate == 1)
   // {
@@ -389,7 +300,7 @@ void RobotDriver::buttons_event_callback(sensor_msgs::msg::Joy::ConstSharedPtr m
   // {
   //   GPIO::output(12, GPIO::LOW);
   // }
-}
+//}
 void RobotDriver::velocity_event_callback(
     geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {

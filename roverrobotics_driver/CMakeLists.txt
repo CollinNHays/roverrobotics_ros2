@@ -33,7 +33,7 @@ target_link_libraries(roverrobotics_driver librover)
 
 link_directories(/usr/local/lib)
 
-target_link_libraries(roverrobotics_driver JetsonGPIO)
+#target_link_libraries(roverrobotics_driver JetsonGPIO)
 
 target_include_directories(roverrobotics_driver
   PUBLIC
