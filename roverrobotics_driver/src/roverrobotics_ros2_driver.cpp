@@ -51,16 +51,16 @@ RobotDriver::RobotDriver()
   odom_child_frame_id_ =
       declare_parameter("odom_child_frame_id", "base_footprint");
   // Finished getting all parameters
-  RCLCPP_INFO(get_logger(),
-              "Robot type is Rover " + robot_type_ + " over " + comm_type_);
-  RCLCPP_INFO(get_logger(), "Receiving velocity command from " + speed_topic_);
-  if (estop_state_)
-    RCLCPP_INFO(get_logger(), "Estop state is currently active");
-  else
-    RCLCPP_INFO(get_logger(), "Estop state is currently inactive");
+  //RCLCPP_INFO(get_logger(),
+  //            "Robot type is Rover " + robot_type_ + " over " + comm_type_);
+  //RCLCPP_INFO(get_logger(), "Receiving velocity command from " + speed_topic_);
+  //if (estop_state_)
+  //  RCLCPP_INFO(get_logger(), "Estop state is currently active");
+  //else
+  //  RCLCPP_INFO(get_logger(), "Estop state is currently inactive");
 
-  RCLCPP_INFO(get_logger(), "Estop activation at " + estop_trigger_topic_);
-  RCLCPP_INFO(get_logger(), "Estop deactivation at " + estop_reset_topic_);
+  //RCLCPP_INFO(get_logger(), "Estop activation at " + estop_trigger_topic_);
+  //RCLCPP_INFO(get_logger(), "Estop deactivation at " + estop_reset_topic_);
 
   // Init Sub
   speed_command_subscriber_ = create_subscription<geometry_msgs::msg::Twist>(
@@ -96,9 +96,9 @@ RobotDriver::RobotDriver()
   robot_status_publisher_ = create_publisher<std_msgs::msg::Float32MultiArray>(
       robot_status_topic_, rclcpp::QoS(31));
   if (pub_tf_) {
-    RCLCPP_INFO(get_logger(),
-                "Publishing Robot TF on " + odom_topic_ + " at %.2Fhz",
-                odometry_frequency_);
+    //RCLCPP_INFO(get_logger(),
+     //           "Publishing Robot TF on " + odom_topic_ + " at %.2Fhz",
+     //           odometry_frequency_);
     odometry_publisher_ =
         create_publisher<nav_msgs::msg::Odometry>(odom_topic_, rclcpp::QoS(4));
     odometry_timer_ =
@@ -106,10 +106,10 @@ RobotDriver::RobotDriver()
   }
   robot_status_timer_ = create_wall_timer(1s / robot_status_frequency_,
                                           [=]() { publish_robot_status(); });
-  RCLCPP_INFO(
-      get_logger(),
-      "Publishing Robot status on " + robot_status_topic_ + " at %.2Fhz",
-      robot_status_frequency_);
+  //RCLCPP_INFO(
+  //    get_logger(),
+  //    "Publishing Robot status on " + robot_status_topic_ + " at %.2Fhz",
+   //   robot_status_frequency_);
   // Init Pid
   if (closed_loop_) {
     RCLCPP_WARN(get_logger(),
@@ -124,8 +124,8 @@ RobotDriver::RobotDriver()
     pid_gains_ = {0, 0, 0};
   }
   // initialize connection to robot
-  RCLCPP_INFO(get_logger(),
-              "Attempting to connect to robot at " + device_port_);
+  //RCLCPP_INFO(get_logger(),
+  //            "Attempting to connect to robot at " + device_port_);
   if (robot_type_ == "pro") {
     try {
       robot_ = std::make_unique<ProProtocolObject>(
@@ -133,8 +133,8 @@ RobotDriver::RobotDriver()
     } catch (int i) {
       RCLCPP_FATAL(get_logger(), "Trouble connecting to robot ");
       if (i == -1) {
-        RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
-                                       " is not available. Stopping This Node");
+      //  RCLCPP_FATAL(get_logger(), "Robot at " + device_port_ +
+       //                                " is not available. Stopping This Node");
       } else if (i == -2) {
         RCLCPP_FATAL(get_logger(),
                      "This Communication Method is not supported");
@@ -144,7 +144,7 @@ RobotDriver::RobotDriver()
       rclcpp::shutdown();
       return;
     }
-    RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
+    //RCLCPP_INFO(get_logger(), "Connected to robot at " + device_port_);
   } else {
     RCLCPP_WARN(get_logger(),
                 "Robot Type is currently not suppported. Stopping this Node");
