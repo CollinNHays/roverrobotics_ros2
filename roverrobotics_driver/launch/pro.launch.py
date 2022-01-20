@@ -19,9 +19,9 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
         Node(
             package='roverrobotics_driver',
-            executable='roverrobotics_driver',
+            node_executable='roverrobotics_driver',
             output='screen',
             parameters=[hardware_config],
-            arguments=[('__log_level:=debug')],
+            arguments=[('__log_level:=info')],
         ),
     ])

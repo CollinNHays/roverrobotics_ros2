@@ -13,12 +13,12 @@ RobotDriver::RobotDriver()
       declare_parameter("robot_info_request_topic", "/robot_info/request");
   robot_info_topic_ = declare_parameter("robot_info_topic", "/robot_info");
   robot_type_ = declare_parameter("robot_type", "pro");
-  device_port_ = declare_parameter("device_port", "/dev/rover");
+  device_port_ = declare_parameter("device_port", "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DT04H6PR-if00-port0");
   comm_type_ = declare_parameter("comm_type", "serial");
   mode_name_ = declare_parameter("mode_name", "OPEN_LOOP");
 
   // Drive
-  speed_topic_ = declare_parameter("speed_topic", "/cmd_vel/managed");
+  speed_topic_ = declare_parameter("speed_topic", "/cmd_vel");
   estop_trigger_topic_ =
       declare_parameter("estop_trigger_topic", "/soft_estop/trigger");
   estop_reset_topic_ =
@@ -44,12 +44,12 @@ RobotDriver::RobotDriver()
         "tuned");
   }
   // Odom
-  pub_tf_ = declare_parameter("publish_tf", false);
+  pub_tf_ = declare_parameter("publish_tf", true);
   odom_topic_ = declare_parameter("odom_topic", "/odom_raw");
   odometry_frequency_ = declare_parameter("odometry_frequency", 10.0);
   odom_frame_id_ = declare_parameter("odom_frame_id", "odom");
   odom_child_frame_id_ =
-      declare_parameter("odom_child_frame_id", "base_footprint");
+      declare_parameter("odom_child_frame_id", "base_link");
   // Finished getting all parameters
   //RCLCPP_INFO(get_logger(),
   //            "Robot type is Rover " + robot_type_ + " over " + comm_type_);
@@ -239,6 +239,16 @@ void RobotDriver::update_odom() {
   odom.header.stamp = get_clock()->now();
   odom.twist.twist.linear.x = robot_data_.linear_vel;
   odom.twist.twist.angular.z = robot_data_.angular_vel;
+  if (robot_data_.linear_vel == 0.0 && robot_data_.angular_vel == 0.0) {
+    odom.twist.covariance[0] = 0.0;
+    odom.twist.covariance[7] = 0.0;
+    odom.twist.covariance[35] = 0.0;
+  }
+  else {
+    odom.twist.covariance[0] = 0.5;
+    odom.twist.covariance[7] = 0.5;
+    odom.twist.covariance[35] = 0.5;
+  }
   odometry_publisher_->publish(odom);
 }
 
