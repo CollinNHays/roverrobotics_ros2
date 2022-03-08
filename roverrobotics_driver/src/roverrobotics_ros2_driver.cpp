@@ -13,7 +13,7 @@ RobotDriver::RobotDriver()
       declare_parameter("robot_info_request_topic", "/robot_info/request");
   robot_info_topic_ = declare_parameter("robot_info_topic", "/robot_info");
   robot_type_ = declare_parameter("robot_type", "pro");
-  device_port_ = declare_parameter("device_port", "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DT04H6PR-if00-port0");
+  device_port_ = declare_parameter("device_port", "/dev/rover");
   comm_type_ = declare_parameter("comm_type", "serial");
   mode_name_ = declare_parameter("mode_name", "OPEN_LOOP");
 
